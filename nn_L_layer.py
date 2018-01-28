@@ -163,7 +163,35 @@ def compute_cost(AL, Y):
     assert(cost.shape == ())
     
     return cost   
+# ==================================================================
+## This needs generalising !
+
+def compute_cost_with_regularization(A3, Y, parameters, lambd):
+    """
+    Implement the cost function with L2 regularization. 
     
+    Arguments:
+    A3 -- post-activation, output of forward propagation, of shape (output size, number of examples)
+    Y -- "true" labels vector, of shape (output size, number of examples)
+    parameters -- python dictionary containing parameters of the model
+    
+    Returns:
+    cost - value of the regularized loss function
+    """
+    m = Y.shape[1]
+    W1 = parameters["W1"]
+    W2 = parameters["W2"]
+    W3 = parameters["W3"]
+    
+    cross_entropy_cost = compute_cost(A3, Y) # This gives you the cross-entropy part of the cost
+    
+    
+    L2_regularization_cost = lambd/(2*m) * (np.sum(np.square(W1)) + np.sum(np.square(W2)) + np.sum(np.square(W3)))
+            
+    cost = cross_entropy_cost + L2_regularization_cost
+    
+    return cost
+# =================================================================    
     
 def linear_backward(dZ, cache):
     """
@@ -216,6 +244,48 @@ def linear_activation_backward(dA, cache, activation):
     
     return dA_prev, dW, db
     
+# ==================================================================
+## This needs generalising to L layers  
+      
+def backward_propagation_with_regularization(X, Y, cache, lambd):
+    """
+    Implements the backward propagation of our baseline model to which we added an L2 regularization.
+    
+    Arguments:
+    X -- input dataset, of shape (input size, number of examples)
+    Y -- "true" labels vector, of shape (output size, number of examples)
+    cache -- cache output from forward_propagation()
+    lambd -- regularization hyperparameter, scalar
+    
+    Returns:
+    gradients -- A dictionary with the gradients with respect to each parameter, activation and pre-activation variables
+    """
+    
+    m = X.shape[1]
+    (Z1, A1, W1, b1, Z2, A2, W2, b2, Z3, A3, W3, b3) = cache
+    
+    dZ3 = A3 - Y
+    
+    dW3 = 1./m * np.dot(dZ3, A2.T) + lambd/m * W3
+    db3 = 1./m * np.sum(dZ3, axis=1, keepdims = True)
+    
+    dA2 = np.dot(W3.T, dZ3)
+    dZ2 = np.multiply(dA2, np.int64(A2 > 0))
+    dW2 = 1./m * np.dot(dZ2, A1.T) + lambd/m * W2
+    db2 = 1./m * np.sum(dZ2, axis=1, keepdims = True)
+    
+    dA1 = np.dot(W2.T, dZ2)
+    dZ1 = np.multiply(dA1, np.int64(A1 > 0))
+    dW1 = 1./m * np.dot(dZ1, X.T) + lambd/m * W1
+    db1 = 1./m * np.sum(dZ1, axis=1, keepdims = True)
+    
+    gradients = {"dZ3": dZ3, "dW3": dW3, "db3": db3,"dA2": dA2,
+                 "dZ2": dZ2, "dW2": dW2, "db2": db2, "dA1": dA1, 
+                 "dZ1": dZ1, "dW1": dW1, "db1": db1}
+    
+    return gradients
+   
+# ==================================================================   
    
 def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, print_cost=False):#lr was 0.009
     """
@@ -228,6 +298,8 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 30
     learning_rate -- learning rate of the gradient descent update rule
     num_iterations -- number of iterations of the optimization loop
     print_cost -- if True, it prints the cost every 100 steps
+    lambd -- regularization hyperparameter, scalar
+    keep_prob - probability of keeping a neuron active during drop-out, scalar.
     
     Returns:
     parameters -- parameters learnt by the model. They can then be used to predict.
@@ -244,13 +316,36 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 30
 
         # Forward propagation: [LINEAR -> RELU]*(L-1) -> LINEAR -> SIGMOID.
         AL, caches = L_model_forward(X, parameters)
+         
+        ## Dropout options
+        # Forward propagation: LINEAR -> RELU -> LINEAR -> RELU -> LINEAR -> SIGMOID.
+        #if keep_prob == 1:
+            #a3, cache = forward_propagation(X, parameters)
+        #elif keep_prob < 1:
+            #a3, cache = forward_propagation_with_dropout(X, parameters, keep_prob) 
         
         # Compute cost.
         cost = compute_cost(AL, Y)
+      
+        ## Cost function with regularization options
+        #if lambd == 0:
+            #cost = compute_cost(a3, Y)
+        #else:
+            #cost = compute_cost_with_regularization(a3, Y, parameters, lambd)
     
         # Backward propagation.
         grads = L_model_backward(AL, Y, caches)
- 
+         
+        # Backward propagation with dropout and reg stuff needs testing.
+        #assert(lambd==0 or keep_prob==1)    # it is possible to use both L2 regularization and dropout, but not common
+                                            
+        #if lambd == 0 and keep_prob == 1:
+            #grads = backward_propagation(X, Y, cache)
+        #elif lambd != 0:
+            #grads = backward_propagation_with_regularization(X, Y, cache, lambd)
+        #elif keep_prob < 1:
+            #grads = backward_propagation_with_dropout(X, Y, cache, keep_prob)
+         
         # Update parameters.
         parameters = update_parameters(parameters, grads, learning_rate)
                 
