@@ -14,6 +14,9 @@ get_ipython().magic('autoreload 2')
 
 np.random.seed(1)
    
+# ==================================================================
+## This needs generalising and testing.
+## Optimization Algos and helper funcs
    
 def random_mini_batches(X, Y, mini_batch_size = 64, seed = 0):
     """
@@ -55,7 +58,44 @@ def random_mini_batches(X, Y, mini_batch_size = 64, seed = 0):
         mini_batches.append(mini_batch)
     
     return mini_batches    
-       
+ 
+# ==================================================================
+## Initailizing velocity zero vectors for Gradient Desc Momentum
+
+def initialize_velocity(parameters):
+    """
+    Initializes the velocity as a python dictionary with:
+                - keys: "dW1", "db1", ..., "dWL", "dbL" 
+                - values: numpy arrays of zeros of the same shape as the corresponding gradients/parameters.
+    Arguments:
+    parameters -- python dictionary containing your parameters.
+                    parameters['W' + str(l)] = Wl
+                    parameters['b' + str(l)] = bl
+    
+    Returns:
+    v -- python dictionary containing the current velocity.
+                    v['dW' + str(l)] = velocity of dWl
+                    v['db' + str(l)] = velocity of dbl
+    """
+    
+    L = len(parameters) 
+    v = {}
+    
+    # Initialize velocity
+    for l in range(L):
+        v["dW" + str(l+1)] = np.zeros((parameters["W" + str(l+1)].shape))
+        v["db" + str(l+1)] = np.zeros((parameters["b" + str(l+1)].shape))
+    return v
+
+
+
+
+
+
+
+
+# ==================================================================
+## Initailizing weight matrices
       
  def initialize_parameters_deep(layer_dims):
     """
