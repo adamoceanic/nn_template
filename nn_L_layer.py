@@ -85,6 +85,7 @@ def initialize_velocity(parameters):
     for l in range(L):
         v["dW" + str(l+1)] = np.zeros((parameters["W" + str(l+1)].shape))
         v["db" + str(l+1)] = np.zeros((parameters["b" + str(l+1)].shape))
+    
     return v
 
 
@@ -639,12 +640,53 @@ def update_parameters(parameters, grads, learning_rate):
         parameters["b" + str(l)] = parameters["b" + str(l)] - (learning_rate * grads["db" + str(l)])
     return parameters
     
-    
-
-
-
+  
 ## Usage Example:
 parameters = L_layer_model(train_x, train_y, layers_dims = (n_x, n_h, n_y), num_iterations = 2500, print_cost=True)
+
+
+# ==================================================================  
+## Update parameters with momentum (optimizations)
+## v is initialized in initialize_velocity (above)
+
+def update_parameters_with_momentum(parameters, grads, v, beta, learning_rate):
+    """
+    Update parameters using Momentum
+    
+    Arguments:
+    parameters -- python dictionary containing your parameters:
+                    parameters['W' + str(l)] = Wl
+                    parameters['b' + str(l)] = bl
+    grads -- python dictionary containing your gradients for each parameters:
+                    grads['dW' + str(l)] = dWl
+                    grads['db' + str(l)] = dbl
+    v -- python dictionary containing the current velocity:
+                    v['dW' + str(l)] = ...
+                    v['db' + str(l)] = ...
+    beta -- the momentum hyperparameter, scalar
+    learning_rate -- the learning rate, scalar
+    }
+    Returns:
+    parameters -- python dictionary containing your updated parameters 
+    v -- python dictionary containing your updated velocities
+    """
+
+    L = len(parameters) 
+    
+    # Momentum update for each parameter
+    for l in range(L):
+        
+        # compute velocities
+        v["dW" + str(l+1)] = (beta * v["dW" + str(l+1)]) + ((1 - beta) * grads["dW" + str(l+1)])
+        v["db" + str(l+1)] = (beta * v["db" + str(l+1)]) + ((1 - beta) * grads["db" + str(l+1)])
+        # update parameters
+        parameters["W" + str(l+1)] = parameters["W" + str(l+1)] - learning_rate * v["dW" + str(l+1)]
+        parameters["b" + str(l+1)] = parameters["b" + str(l+1)] - learning_rate * v["db" + str(l+1)]
+        
+    return parameters, v
+
+
+
 
 ## Need to implement predict func eg.
 #  predictions_train = predict(train_x,train_y, parameters)
